@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "GigaAM Russian speech input",
+    "description": "Transcribe Russian recordings locally on CPU with GigaAM v3; the ONNX model downloads on first use."
+  }
+}

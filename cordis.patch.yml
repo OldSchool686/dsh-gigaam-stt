@@ -1,0 +1,11 @@
+- id: speech-to-text
+  config:
+    defaultProvider: gigaam-local
+    language: ru
+- id: speech-to-text-sensevoice
+  disabled: true
+- insert:
+    - id: speech-to-text-gigaam
+      name: dsh-gigaam-stt
+      config:
+        dataRoot: !!js dshHomePath('speech-to-text', 'gigaam')
