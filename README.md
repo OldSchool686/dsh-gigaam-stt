@@ -22,6 +22,11 @@ mic → 16 kHz mono PCM16 WAV → this provider → worker thread → sherpa-onn
   idle minutes. Nothing runs in the background.
 - **No dependencies.** The plugin itself imports only Node built-ins; sherpa-onnx is reused from your DSH
   installation. No build step, no native compilation, no Python.
+- **Long recordings work.** Audio is cut into pause-aligned windows of 20 s before decoding: a single pass over
+  anything past ~200 s aborts sherpa-onnx (5 000 encoder frames), while pause-aligned windows keep memory at
+  ~520 MB and stay within the model's trained length. 214 s of audio decodes in 8.7 s.
+- **Numbers as digits.** "двадцать пять" → "25", "в две тысячи двадцать пятом году" → "в 2025 году". Conservative:
+  single words below two stay as words, so "ни один" and "один в один" survive. Switch off with `numbers: words`.
 - **Non-blocking.** Recognition runs in a `worker_threads` worker, so the chat never stalls while decoding.
 - **Safe downloads.** Pinned URL, size and SHA-256 for every asset; interrupted downloads resume from `.part` files.
 
@@ -44,7 +49,7 @@ accepts any spec `pnpm` accepts:
 | npm registry | `dsh-gigaam-stt` |
 | GitHub repository | `github:OldSchool686/dsh-gigaam-stt` |
 | Local checkout | absolute path, e.g. `/home/me/dsh-gigaam-stt` |
-| Tarball | `/home/me/dsh-gigaam-stt-1.0.0.tgz` |
+| Tarball | `/home/me/dsh-gigaam-stt-1.1.0.tgz` |
 
 The bundle's patch does three things: it makes `gigaam-local` the default speech provider with language `ru`,
 disables the bundled SenseVoice provider (its languages are zh/en/yue/ja/ko, so it would only add noise), and mounts
@@ -91,6 +96,8 @@ Configure the `speech-to-text-gigaam` row in your profile patch (or via the plug
 | `threads` | `4` | sherpa-onnx intra-op threads. Lower it on small CPUs, raise it for throughput. |
 | `idleTimeoutMs` | `300000` | unload the model after this much inactivity. |
 | `maxAudioSeconds` | `600` | reject longer recordings before decoding. |
+| `maxSegmentSeconds` | `20` | decode in pause-aligned windows of at most this length (5–180). Longer audio is split, not rejected. |
+| `numbers` | `digits` | `digits` rewrites Russian number words to digits; `words` leaves them as spoken. |
 | `progressIntervalMs` | `100` | download progress publication interval. |
 
 Example override:
@@ -107,12 +114,16 @@ Example override:
 1. The DSH speech service validates that the recording is a canonical 16 kHz mono PCM16 WAV and hands the bytes to
    the provider.
 2. The provider serialises requests, wakes the worker if needed, and transfers the audio buffer.
-3. The worker strips the 44-byte WAV header, converts PCM16 to float32, and runs `OfflineRecognizer` with
-   `modelConfig.nemoCtc` (GigaAM `e2e_ctc` emits punctuation and casing directly).
-4. Text comes back with `audioSeconds` and `inferenceSeconds`; the model unloads after the idle timeout.
+3. The worker strips the 44-byte WAV header, converts PCM16 to float32, and splits the speech into windows of at
+   most `maxSegmentSeconds`, cutting inside pauses (adaptive RMS threshold over 10 ms frames) and dropping leading and
+   trailing silence. Each window goes through `OfflineRecognizer` with `modelConfig.nemoCtc` (GigaAM `e2e_ctc` emits
+   punctuation and casing directly).
+4. Windows are joined, number words are normalised (unless `numbers: words`), and the text comes back with
+   `audioSeconds` and `inferenceSeconds`; the model unloads after the idle timeout.
 
 Measured on an 8-vCPU box (Node 24, int8, 4 threads): model load 0.84 s, decode 0.44–0.46 s for 11.29 s of audio,
-RSS ~420 MB with the model resident.
+RTF ~0.043 for long input (214 s in 8.7 s), RSS ~420 MB with the model resident and ~520 MB during a long
+transcription. One pass over 214 s without windowing used ~2 GB and aborted the process.
 
 ## Self-test without the UI
 
@@ -134,6 +145,7 @@ The script talks to `worker.js` directly; it resolves sherpa from your DSH insta
 | Download fails behind a firewall | The second origin `https://hf-mirror.com` is tried automatically; otherwise pre-seed `dataRoot` manually (see above). |
 | `Audio must be a canonical 16 kHz mono PCM16 WAV recording` | The client sent another format; this provider accepts only that one. |
 | First recording shows “Разбужаем локальный голос…” | The model was unloaded after `idleTimeoutMs`; loading takes ~1 s. |
+| Numbers stay as words (or an odd rewrite) | `numbers: digits` is the default; set `numbers: words` to keep them spoken, or raise `maxSegmentSeconds` if a phrase was split mid-number. |
 | Preparation stuck in `failed` | Fix the reported cause and record again — the next recording retries the worker automatically. |
 
 ## Uninstall

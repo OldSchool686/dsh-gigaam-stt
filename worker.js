@@ -1,7 +1,9 @@
 import { createRequire } from 'node:module'
 import { parentPort, workerData } from 'node:worker_threads'
+import { normalizeNumbers } from './itn.js'
+import { splitAtPauses } from './segment.js'
 
-const { sherpaPath, model, tokens, threads } = workerData
+const { sherpaPath, model, tokens, threads, maxSegmentSeconds, numbers } = workerData
 
 let recognizer
 
@@ -21,6 +23,23 @@ function pcm16(wav) {
   return samples
 }
 
+/**
+ * Decode the recording in pause-aligned windows. One pass over anything longer than ~200 s crashes
+ * the recognizer (5 000 encoder frames) and costs memory linearly, while cutting mid-word loses it.
+ */
+function transcribe(samples) {
+  const parts = []
+  for (const range of splitAtPauses(samples, maxSegmentSeconds)) {
+    const stream = recognizer.createStream()
+    stream.acceptWaveform({ sampleRate: 16000, samples: samples.subarray(range.start, range.end) })
+    recognizer.decode(stream)
+    const text = String(recognizer.getResult(stream).text ?? '').trim()
+    if (text) parts.push(text)
+  }
+  const joined = parts.join(' ')
+  return numbers === 'digits' ? normalizeNumbers(joined) : joined
+}
+
 function messageOf(error) {
   return error instanceof Error ? error.message : String(error)
 }
@@ -38,10 +57,7 @@ parentPort.on('message', (message) => {
   if (message.type !== 'transcribe') return
   const started = Date.now()
   try {
-    const stream = recognizer.createStream()
-    stream.acceptWaveform({ sampleRate: 16000, samples: pcm16(message.wav) })
-    recognizer.decode(stream)
-    const text = String(recognizer.getResult(stream).text ?? '').trim()
+    const text = transcribe(pcm16(message.wav))
     parentPort.postMessage({ type: 'result', id: message.id, text, inferenceSeconds: (Date.now() - started) / 1000 })
   } catch (error) {
     parentPort.postMessage({ type: 'error', id: message.id, message: messageOf(error) })

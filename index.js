@@ -37,6 +37,12 @@ function settings(config) {
   const origins = config.modelOrigins ?? DEFAULT_ORIGINS
   if (!Array.isArray(origins) || origins.length === 0) throw new Error('dsh-gigaam-stt: modelOrigins is empty')
   for (const origin of origins) new URL(origin)
+  const maxSegmentSeconds = config.maxSegmentSeconds ?? 20
+  if (!Number.isInteger(maxSegmentSeconds) || maxSegmentSeconds < 5 || maxSegmentSeconds > 180)
+    throw new Error('dsh-gigaam-stt: maxSegmentSeconds must be an integer between 5 and 180')
+  const numbers = config.numbers ?? 'digits'
+  if (numbers !== 'digits' && numbers !== 'words')
+    throw new Error("dsh-gigaam-stt: numbers must be 'digits' or 'words'")
   return {
     providerId: config.providerId ?? 'gigaam-local',
     dataRoot,
@@ -44,6 +50,8 @@ function settings(config) {
     threads: config.threads ?? 4,
     idleTimeoutMs: config.idleTimeoutMs ?? 300000,
     maxAudioSeconds: config.maxAudioSeconds ?? 600,
+    maxSegmentSeconds,
+    numbers,
     progressIntervalMs: config.progressIntervalMs ?? 100,
   }
 }
@@ -364,6 +372,8 @@ class GigaamProvider {
         model: this.#paths.model,
         tokens: this.#paths.tokens,
         threads: this.#config.threads,
+        maxSegmentSeconds: this.#config.maxSegmentSeconds,
+        numbers: this.#config.numbers,
       },
     })
     const entry = { handle, ready: undefined, resolveReady: undefined, rejectReady: undefined }
