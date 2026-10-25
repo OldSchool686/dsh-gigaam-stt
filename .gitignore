@@ -1,4 +1,11 @@
+.env*
+.envrc
+*.pem
+*.key
+*.p12
+id_rsa
+id_ed25519*
 node_modules/
 *.log
-.DS_Store
 *.tgz
+.DS_Store

@@ -141,6 +141,17 @@ The script talks to `worker.js` directly; it resolves sherpa from your DSH insta
 Remove the bundle through the Plugin Manager (or ask your agent). The model stays in
 `~/.dsh/speech-to-text/gigaam` — delete that directory to reclaim ~320 MB.
 
+## Privacy
+
+- **No credentials.** The plugin reads one environment variable, `GIGAAM_SHERPA_PATH` (a local filesystem path). It
+  never touches DSH credentials, API keys, cookies or the settings store.
+- **No telemetry**, no analytics, no update checks, no accounts.
+- **The only network access** is the one-time model download over HTTPS from `modelOrigins`: a plain GET with no
+  authorization header. It can be skipped entirely by pre-seeding `dataRoot`.
+- **Audio never leaves the machine.** The recording goes to a local worker thread, is decoded on the CPU, and is
+  dropped afterwards.
+- **Nothing is written outside `dataRoot`** (plus `.part` files inside it while a download is in progress).
+
 ## License and credits
 
 - This bundle: MIT (see [LICENSE](./LICENSE)).
