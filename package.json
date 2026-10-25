@@ -1,6 +1,6 @@
 {
   "name": "dsh-gigaam-stt",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Local Russian speech-to-text for DeepSeek Harness voice input: GigaAM v3 (ONNX int8) on CPU via sherpa-onnx",
   "type": "module",
   "main": "index.js",

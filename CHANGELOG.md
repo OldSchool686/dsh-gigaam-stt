@@ -1,7 +1,12 @@
 # Changelog
 
-## Unreleased
+## 1.1.1 — 2026-10-25
 
+Long dictation no longer gets cut, plus an opt-in way to see what the recognizer heard.
+
+- **Recording cap raised.** The harness transport (`api-speech-to-text`) caps a recording at 120 s / 4 MiB by
+  default and silently truncates anything longer. The bundle now patches those limits to 600 s / 20 MiB, which
+  matches the provider's `maxAudioSeconds` default. Raise both if you need longer single recordings.
 - **Opt-in diagnostics.** `GIGAAM_DEBUG=1` makes the worker log each window's raw transcript and the normalised
   result, which tells an ASR mishearing apart from a number-normalisation bug without re-plumbing the plugin.
 

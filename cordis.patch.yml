@@ -4,6 +4,11 @@
     language: ru
 - id: speech-to-text-sensevoice
   disabled: true
+# The harness ships 120 s / 4 MiB recording caps; raise them so a long dictation is not silently cut.
+- id: api-speech-to-text
+  config:
+    maxAudioBytes: 20971520
+    maxDurationSeconds: 600
 - insert:
     - id: speech-to-text-gigaam
       name: dsh-gigaam-stt
