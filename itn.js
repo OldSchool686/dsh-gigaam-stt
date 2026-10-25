@@ -4,6 +4,9 @@
  *
  * Deliberately conservative — a wrong digit in a chat message is worse than a written-out number:
  * single words below two are left alone, so idioms like "ни один" and "один в один" survive.
+ *
+ * ponytail: no decimals ("две целых пять десятых"), no fractions and no unit-aware rewrites ("полтора");
+ * add a small grammar over the same token runs if dictating measurements matters.
  */
 const CARDINAL = new Map(
   Object.entries({

@@ -2,6 +2,9 @@
  * Split one utterance into windows that meet the model's ~200 s limit (5 000 encoder frames) and
  * that prefer cutting inside a pause: a hard cut in the middle of a word loses it, a cut in silence
  * does not.
+ *
+ * ponytail: energy VAD (RMS threshold), not a model — swap in sherpa's Silero VAD if a noisy room splits
+ * mid-word and the ~0.5 MB model download becomes acceptable.
  */
 const FRAME = 160 // 10 ms at 16 kHz
 const MIN_PAUSE_FRAMES = 25 // 0.25 s of silence is enough to cut
