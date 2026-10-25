@@ -5,6 +5,14 @@ import { splitAtPauses } from './segment.js'
 
 const { sherpaPath, model, tokens, threads, maxSegmentSeconds, numbers } = workerData
 
+// GIGAAM_DEBUG=1 prints what the recognizer heard before number normalisation, window by window,
+// to the harness log — the only way to tell an ASR mishearing from an ITN bug.
+const DEBUG = process.env.GIGAAM_DEBUG === '1'
+
+function debug(line) {
+  if (DEBUG) console.error(`[gigaam-stt] debug: ${line}`)
+}
+
 let recognizer
 
 function load() {
@@ -29,15 +37,20 @@ function pcm16(wav) {
  */
 function transcribe(samples) {
   const parts = []
-  for (const range of splitAtPauses(samples, maxSegmentSeconds)) {
+  const ranges = splitAtPauses(samples, maxSegmentSeconds)
+  debug(`${(samples.length / 16000).toFixed(2)}s of audio in ${ranges.length} window(s)`)
+  for (const range of ranges) {
     const stream = recognizer.createStream()
     stream.acceptWaveform({ sampleRate: 16000, samples: samples.subarray(range.start, range.end) })
     recognizer.decode(stream)
     const text = String(recognizer.getResult(stream).text ?? '').trim()
+    debug(`${((range.end - range.start) / 16000).toFixed(2)}s window heard ${JSON.stringify(text)}`)
     if (text) parts.push(text)
   }
   const joined = parts.join(' ')
-  return numbers === 'digits' ? normalizeNumbers(joined) : joined
+  const normalized = numbers === 'digits' ? normalizeNumbers(joined) : joined
+  debug(`raw ${JSON.stringify(joined)} -> numbers ${JSON.stringify(normalized)}`)
+  return normalized
 }
 
 function messageOf(error) {

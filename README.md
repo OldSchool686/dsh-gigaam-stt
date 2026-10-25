@@ -146,6 +146,7 @@ The script talks to `worker.js` directly; it resolves sherpa from your DSH insta
 | `Audio must be a canonical 16 kHz mono PCM16 WAV recording` | The client sent another format; this provider accepts only that one. |
 | First recording shows “Разбужаем локальный голос…” | The model was unloaded after `idleTimeoutMs`; loading takes ~1 s. |
 | Numbers stay as words (or an odd rewrite) | `numbers: digits` is the default; set `numbers: words` to keep them spoken, or raise `maxSegmentSeconds` if a phrase was split mid-number. |
+| A number came out wrong, or you want to know what the recognizer heard | Set `GIGAAM_DEBUG=1` in the DSH process environment: the worker then logs every window's raw text and the normalised result (`[gigaam-stt] debug: ...`) to the harness log, which separates a mishearing from a normalisation bug. |
 | Preparation stuck in `failed` | Fix the reported cause and record again — the next recording retries the worker automatically. |
 
 ## Uninstall

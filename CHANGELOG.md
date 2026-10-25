@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Opt-in diagnostics.** `GIGAAM_DEBUG=1` makes the worker log each window's raw transcript and the normalised
+  result, which tells an ASR mishearing apart from a number-normalisation bug without re-plumbing the plugin.
+
 ## 1.1.0 — 2026-10-25
 
 Long recordings and numbers.
