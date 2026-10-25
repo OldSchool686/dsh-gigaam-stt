@@ -147,6 +147,7 @@ The script talks to `worker.js` directly; it resolves sherpa from your DSH insta
 | First recording shows “Разбужаем локальный голос…” | The model was unloaded after `idleTimeoutMs`; loading takes ~1 s. |
 | Numbers stay as words (or an odd rewrite) | `numbers: digits` is the default; set `numbers: words` to keep them spoken, or raise `maxSegmentSeconds` if a phrase was split mid-number. |
 | A number came out wrong, or you want to know what the recognizer heard | Set `GIGAAM_DEBUG=1` in the DSH process environment: the worker then logs every window's raw text and the normalised result (`[gigaam-stt] debug: ...`) to the harness log, which separates a mishearing from a normalisation bug. |
+| Recording is cancelled when you switch to another window | The harness voice-input client cancels an in-flight capture on window blur and on a hidden tab (`client.js`, `blur`/`visibilitychange` handlers). Keep the chat window focused while dictating; this provider never sees the discarded audio. |
 | Recording stops by itself after ~2 minutes | The transport caps recordings at 120 s / 4 MiB by default; this bundle raises it to 600 s / 20 MiB. For longer single recordings raise `maxDurationSeconds` + `maxAudioBytes` on `api-speech-to-text` and `maxAudioSeconds` here. |
 | Preparation stuck in `failed` | Fix the reported cause and record again — the next recording retries the worker automatically. |
 
